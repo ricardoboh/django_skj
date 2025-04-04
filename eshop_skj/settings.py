@@ -48,7 +48,14 @@ INSTALLED_APPS = [
 
     'rest-framework',
     'django_extension',
+    'django-debug-toolbar',
+    'django_extensions',
+    'crispy_forms',
+    'django-environ',
 ]
+
+CRISPY_TEMPLATE_PACK = 'bootstrap5'
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
