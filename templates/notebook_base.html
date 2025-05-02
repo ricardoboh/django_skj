@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}E-shop{% endblock %}
+
+{% block nav %}
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container-fluid">
+      <span class="navbar-brand mb-0 h1">Bistro Olomouc - BOH0162</span>
+      <div class="mx-auto">
+        {% if active_tab == 'active_orders' %}
+          <a href="{% url 'call_center_form' %}" class="btn btn-create-order">
+            VYTVOŘIT OBJEDNÁVKU
+          </a>
+        {% endif %}
+      </div>
+      <div>
+        <a href="{% url 'logout' %}" class="btn btn-link btn-logout">Odhlásit se</a>
+      </div>
+    </div>
+  </nav>
+{% endblock %}
+
+{% block extra_head %}
+  <style>
+    .container-fluid {
+        flex-wrap: wrap;
+    }
+    .btn-create-order {
+      background-color: #0056b3;
+      color:white;
+      font-size:20px;
+      width:350px;
+      margin: 0.5rem;
+    }
+    .btn-logout { 
+        color:white;
+        font-weight:bold;
+        font-size:18px;
+    }
+    .floating-btn {
+      position: fixed;
+      bottom:30px;
+      right:30px;
+      width:80px;
+      height:80px;
+      font-size:40px;
+      border-radius:50%;
+    }
+    @media (max-width: 992px) {
+        .btn-create-order {
+          flex: 0 0 100%;
+          width: auto;
+          text-align: center;
+          margin-left: auto;
+          margin-right: auto;
+          color: red;
+        }
+        .container-fluid {
+            background-color: red;
+          }
+      }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+      <a class="nav-link {% if active_tab == 'active_orders' %}active{% endif %}"
+         href="{% url 'active_orders' %}">Aktivní objednávky</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if active_tab == 'history_orders' %}active{% endif %}"
+         href="{% url 'history_orders' %}">Historie objednávek</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if active_tab == 'end_of_shift' %}active{% endif %}"
+         href="{% url 'end_of_shift' %}">Konec směny</a>
+    </li>
+  </ul>
+
+  <div class="tab-content">
+    {% block delivery_content %}{% endblock %}
+  </div>
+
+  {% if active_tab == 'active_orders' %}
+  <a href="{% url 'call_center_form' %}" class="btn btn-primary floating-btn shadow-lg">+</a>
+  {% endif %}
+{% endblock %}

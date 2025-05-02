@@ -1,0 +1,181 @@
+{% extends 'notebook_base.html' %}
+
+{% block title %}Konec směny | Bistro Olomouc{% endblock %}
+
+{% block extra_head %}
+  <style>
+    .row {
+      display: inline-flex;
+      flex-wrap: wrap;
+      width: 100%;
+    }
+    .col-6 {
+      box-sizing: border-box;
+      width: 40%;
+      padding: 10px;
+    }
+    @media (max-width: 800px) {
+      .col-6 {
+        width: 80%;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        width: 100%;
+        justify-content: center;
+      }
+      .end-form {
+        margin-top: 30px;
+      }
+    }
+    table { 
+        width: 100%;
+        table-layout: auto; }
+    th {
+      text-align: left;
+      padding-right: 5px;
+      vertical-align: top;
+      white-space: nowrap;
+      max-width: 270px;
+      width: 1%;
+    }
+    td {
+      min-width: 50px;
+      max-width: 150px;
+      padding-left: 5px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .form-control {
+      text-align: right;
+      margin-left: 10px;
+      margin-bottom: 20px;
+    }
+    label {
+      display: inline-block;
+      width: 200px;
+    }
+    .btn-logout {
+        color: white;
+        font-weight: bold;
+        font-size: 18px;
+    }
+
+  </style>
+{% endblock %}
+
+{% block delivery_content %}
+
+<div class="container">
+
+  <h3 class="fw-bold">UZÁVĚRKA FINANCÍ SMĚNY</h3>
+
+  <div class="row">
+    <div class="col-6">
+      <table>
+        <tbody>
+          <tr>
+            <th>Uzávěrka generována:</th>
+            <td id="valueGenerated">---</td>
+          </tr>
+          <tr>
+            <th>První objednávka přijata:</th>
+            <td id="valueDateFrom">---</td>
+          </tr>
+          <tr>
+            <th>Poslední objednávka přijata:</th>
+            <td id="valueDateTo">---</td>
+          </tr>
+          <tr>
+            <th>Počet objednávek:</th>
+            <td id="valueNumOfOrders">---</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="mt-4">Rozdělení podle rozvozců:</h5>
+      <p>Zde se zobrazí informace o rozvozcích.</p>
+
+      <table class="mt-2">
+        <tbody>
+          <tr>
+            <th>CELKEM HOTOVO:</th>
+            <td id="valueSumDone">---</td>
+          </tr>
+          <tr>
+            <th>Přijato celkem:</th>
+            <td id="valueSumAll">---</td>
+          </tr>
+          <tr>
+            <button
+            type="button" 
+            class="btn btn-secondary px-4 my-2"
+            onclick="endShift()"
+            >UZAVŘÍT SMĚNU</button>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="col-6 end-form">
+      <form method="post">
+        <div class="mb-3">
+          <label>Objednávky bistro:</label>
+          <input type="number" class="form-control" name="oSum" placeholder="0">
+        </div>
+        <div class="mb-3">
+          <label>Zaplaceno stravenkami:</label>
+          <input type="number" class="form-control" name="fSum" placeholder="0">
+        </div>
+        <div class="mb-3">
+          <label>Zaplaceno kartou:</label>
+          <input type="number" class="form-control" name="cSum" placeholder="0">
+        </div>
+        <div class="mb-3">
+          <label>Výdaje navíc:</label>
+          <input type="number" class="form-control" name="sSum" placeholder="0">
+        </div>
+        <div class="mb-3">
+          <label>Denní odklad (1000 Kč):</label>
+          <input type="number" class="form-control" name="deferment" placeholder="0" disabled>
+        </div>
+        <div class="mb-3">
+          <label>Odevzdat v hotovosti:</label>
+          <input type="number" class="form-control" name="cash" placeholder="0" disabled>
+        </div>
+        <div class="mt-4">
+          <button type="submit" class="btn btn-primary">ULOŽIT</button>
+          <button type="button" class="btn btn-secondary">KONTROLA</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts%}
+<script>
+    function endShift() {
+        fetch('{% url 'end_shift' %}', {
+            method: 'POST',
+            headers: {
+              'X-CSRFToken': '{{ csrf_token }}'
+            },
+            credentials: 'same-origin'
+          })
+          .then(r => r.json())
+          .then(d => {
+            if (d.success && d.redirect_url) {
+              window.location.href = d.redirect_url;
+            } else {
+              alert(d.error || 'Chyba při uzavírání směny.');
+            }
+          });
+    }
+</script>
+{% endblock%}

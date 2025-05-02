@@ -1,0 +1,162 @@
+{% extends 'notebook_base.html' %}
+
+{% block title %}Historie objednávek | Bistro Olomouc{% endblock %}
+
+{% block extra_head %}
+  <style>
+    .history-container {
+        width: 100%;
+        padding: 0;
+    }
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      font-weight: bold;
+      font-size: 19px;
+      color: white;
+      background-color: #343a40;
+      padding: 10px;
+      margin-bottom: 5px;
+    }
+    .order-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px;
+      background-color: #F0F0F0;
+      margin-bottom: 2px;
+      position: relative;
+      cursor: context-menu;
+    }
+    .order-row:nth-child(even) {
+        background-color: #D0D0D0; 
+    }
+    .order-item { 
+        flex: 1;
+        margin: 0; 
+        padding: 5px;
+    }
+    .context-menu {
+      position: fixed;
+      display: none;
+      background-color: #707070;
+      color: white;
+      font-size: 18px;
+      border-radius: 5px;
+      z-index: 1000;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      min-width: 150px;
+    }
+    .context-menu-item {
+      padding: 10px;
+      cursor: pointer;
+      position: relative;
+    }
+    .context-menu-item:hover { 
+        background-color: #505050; 
+    }
+    .submenu {
+      display: none; 
+      background-color: #505050;
+      position: absolute; 
+      top: 0; 
+      left: 100%; 
+      padding: 5px;
+      border-radius: 5px; 
+      opacity: 0;
+      transition: opacity 0.2s ease-in-out;
+    }
+    .context-menu-item:hover .submenu,
+    .submenu:hover {
+      display: block; 
+      opacity: 1;
+    }
+    .btn-logout {
+        color: white;
+        font-weight: bold;
+        font-size: 18px;
+    }
+  </style>
+{% endblock %}
+
+{% block delivery_content %}
+  <div class="container-fluid history-container">
+    <div class="history-header">
+      <div class="order-item">Přijato</div>
+      <div class="order-item">Stav</div>
+      <div class="order-item">Objednávka</div>
+      <div class="order-item">Zákazník</div>
+    </div>
+
+    {% for order in orders %}
+      <div class="order-row">
+        <div class="order-item">
+            {{ order.order_date|date:"H:i" }}<br>
+            {{ order.order_date|date:"d.m.Y" }}
+          </div>
+        <div class="order-item">
+          Stav: {{ order.state }}<br>
+          Cena: {{ order.price_total }} Kč<br>
+          Rozvoz: 
+          {% if order.delivery_guy %}
+            {{ order.delivery_guy.name }} {{ order.delivery_guy.surname }}
+          {% else %}
+            Neznámý
+          {% endif %}
+        </div>
+        <div class="order-item">
+          {% for item in order.ordermenu_set.all %}
+            • {{item.quantity}}x {{ item.menu_product.name }} ({{ item.price_part }} Kč)<br>
+          {% endfor %}
+        </div>
+        <div class="order-item">
+          {{ order.customer.name }}<br>
+          {{ order.customer.address }}<br>
+          Tel.: {{ order.customer.phone }}
+        </div>
+
+        <div class="context-menu">
+          <div class="context-menu-item">Tisk objednávky</div>
+          <div class="context-menu-item">
+            Změnit rozvoz
+            <div class="submenu">
+              {% for guy in delivery_guys %}
+                <div class="context-menu-item">
+                  {{ guy.name }} {{ guy.surname }}
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+    <br>
+      <p>Žádné dokončené objednávky.</p>
+    {% endfor %}
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('.order-row').forEach(row => {
+        row.addEventListener('contextmenu', function (e) {
+          e.preventDefault();
+          document.querySelectorAll('.context-menu')
+                  .forEach(m => m.style.display = 'none');
+
+          const menu = row.querySelector('.context-menu');
+          menu.style.display = 'block';
+          menu.style.top  = e.clientY + 'px';
+          menu.style.left = e.clientX + 'px';
+        });
+      });
+
+      document.addEventListener('click', function (e) {
+        if (!e.target.closest('.context-menu')) {
+          document.querySelectorAll('.context-menu')
+                  .forEach(m => m.style.display = 'none');
+        }
+      });
+    });
+  </script>
+{% endblock %}
