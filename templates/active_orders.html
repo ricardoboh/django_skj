@@ -1,0 +1,152 @@
+{% extends 'notebook_base.html' %}
+
+{% block title %}Aktivní objednávky{% endblock %}
+
+{% block extra_head %}
+  <style>
+    .active-container {
+        width: 100%;
+        padding: 0;
+    }
+    .active-header,
+    .order-row {
+      display: flex;
+      column-gap: 20px;
+    }
+    .active-header {
+      font-weight: bold;
+      font-size: 19px;
+      color: white;
+      background-color: #343a40;
+      padding: 10px;
+      margin-bottom: 5px;
+    }
+    .order-row {
+      align-items: center;
+      padding: 10px;
+      margin-bottom: 2px;
+      cursor: pointer;
+      flex-wrap: wrap;
+    }
+    .order-row.verified {
+      background-color: #AAFFAA;
+    }
+    .order-row.unverified {
+        background-color:rgb(255, 170, 170);
+    }
+    .active-header .order-item,
+    .order-row .order-item {
+      flex: 1;
+      margin: 0;
+      padding: 5px;
+    }
+    .active-header .order-item.date,
+    .order-row .order-item.date {
+      flex: 0 0 90px;
+      text-align: left;
+    }
+    .active-header .order-item.details,
+    .order-row .order-item.details {
+      flex: 1.2;
+    }
+    @media (max-width: 768px) {
+      .order-item.date, .order-item.details {
+        display: none;
+      }
+      .order-row.expanded .order-item.date,
+      .order-row.expanded .order-item.details {
+        display: block;
+        width: 100%;
+        text-align: left;
+        margin-top: 5px;
+      }
+    }
+    .btn-create-order {
+      background-color: #0056b3;
+      color: white;
+      font-size: 20px;
+      width: 350px;
+    }
+    .btn-logout {
+      color: white;
+      font-weight: bold;
+      font-size: 18px;
+    }
+    .floating-btn {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 80px;
+      height: 80px;
+      font-size: 40px;
+      border-radius: 50%;
+    }
+  </style>
+{% endblock %}
+
+
+
+
+
+{% block delivery_content %}
+  <div class="container-fluid active-container">
+    <div class="active-header">
+      <div class="order-item date">Přijato</div>
+      <div class="order-item details">Objednávka</div>
+      <div class="order-item">Zákazník</div>
+      <div class="order-item">Volby</div>
+    </div>
+
+    {% for order in orders %}
+      <div class="order-row 
+      {% if order.state == 'Ověřeno' %}verified
+      {% elif order.state == 'Neověřeno'%}unverified
+      {% endif %}">
+        <div class="order-item date">{{ order.order_date|date:"H:i" }}</div>
+        <div class="order-item details">
+          {% for item in order.ordermenu_set.all %}
+            • {{item.quantity}}x {{ item.menu_product.name }} ({{ item.price_part }} Kč)<br>
+          {% endfor %}
+        </div>
+        <div class="order-item">
+          {{ order.customer.name }} {{ order.customer.surname}}<br>
+          +420 {{ order.customer.phone|slice:"0:3" }} {{ order.customer.phone|slice:"3:6" }} {{ order.customer.phone|slice:"6:9" }}<br>
+          {{ order.customer.address }}
+        </div>
+        <div class="order-item d-flex flex-column gap-1">
+            <button
+              class="btn btn-sm btn-primary"
+              onclick="fetch('{% url 'order_verify_toggle' order.id %}', {method:'POST', headers:{'X-CSRFToken':'{{csrf_token}}'}}).then(r=>r.json()).then(d=>location.reload())">
+              {% if order.state == "Ověřeno" %}
+                HOTOVO
+              {% else %}
+                OVĚŘIT
+              {% endif %}
+            </button>
+          
+            <button
+              class="btn btn-sm btn-warning"
+              onclick="if(confirm('Opravdu zrušit tuto objednávku?')) fetch('{% url 'order_cancel' order.id %}', {method:'POST', headers:{'X-CSRFToken':'{{csrf_token}}'}}).then(r=>r.json()).then(d=>location.reload())">
+              STORNO
+            </button>
+          
+            <button
+              class="btn btn-sm btn-secondary"
+              onclick="window.open('{% url 'order_print' order.id %}','_blank')">
+              TISK
+            </button>
+          </div>               
+      </div>
+    {% empty %}
+      <p class="mt-4">Žádné aktivní objednávky.</p>
+    {% endfor %}
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    document.querySelectorAll('.order-row').forEach(row =>
+      row.addEventListener('click', ()=> row.classList.toggle('expanded'))
+    );
+  </script>
+{% endblock %}

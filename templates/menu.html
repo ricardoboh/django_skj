@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+{% block title %}Jídelní lístek{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2 class="mb-4">Vyberte restauraci</h2>
+  <div class="mb-5">
+    <select id="restaurantSelect" class="form-select">
+      <option selected disabled>-- Vyberte restauraci --</option>
+      {% for r in restaurants %}
+        <option value="{{ r.id }}">{{ r.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <h3>Produkty</h3>
+  <div id="productGrid" class="row g-3 mb-5">
+  </div>
+  <hr>
+  <h3>Košík</h3>
+  <table class="table table-bordered mb-3">
+    <thead>
+      <tr>
+        <th>Produkt</th><th>Množství</th><th>Cena</th><th>Akce</th>
+      </tr>
+    </thead>
+    <tbody id="cartBody"></tbody>
+  </table>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h5>Celkem: <span id="cartTotal">0.00</span> Kč</h5>
+    <button id="checkoutBtn" class="btn btn-success">Objednat</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const restaurantSelect = document.getElementById('restaurantSelect');
+      const productGrid = document.getElementById('productGrid');
+      const cartBody = document.getElementById('cartBody');
+      const cartTotalEl = document.getElementById('cartTotal');
+      const checkoutBtn = document.getElementById('checkoutBtn');
+    
+      let customerId = null;
+
+    
+      let cart = {};
+      let currentRestaurantId = null;
+    
+    fetch("{% url 'customer_id' %}")
+    .then(r => r.json())
+    .then(data => {
+        customerId = data.customer_id;
+    })
+    .catch(console.error);
+
+      function fetchJSON(url, cb) {
+        fetch(url, { credentials:'same-origin' })
+          .then(r => { if (!r.ok) throw new Error(r.statusText); return r.json(); })
+          .then(cb)
+          .catch(err => console.error('fetchJSON', url, err));
+      }
+    
+      function renderCart() {
+        cartBody.innerHTML = '';
+        let total = 0;
+        Object.entries(cart).forEach(([id, item]) => {
+          const line = item.price * item.qty;
+          total += line;
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${item.name}</td>
+            <td>${item.qty}</td>
+            <td>${line.toFixed(2)} Kč</td>
+            <td>
+              <button class="btn btn-sm btn-outline-success inc" data-id="${id}">+</button>
+              <button class="btn btn-sm btn-outline-secondary dec" data-id="${id}">-</button>
+              <button class="btn btn-sm btn-outline-danger del" data-id="${id}">x</button>
+            </td>`;
+          cartBody.append(tr);
+        });
+        cartTotalEl.textContent = total.toFixed(2);
+      }
+    
+      restaurantSelect.addEventListener('change', () => {
+        const newRid = restaurantSelect.value;
+        if (!newRid) return;
+        if (currentRestaurantId && currentRestaurantId !== newRid) {
+          cart = {};
+          renderCart();
+        }
+        currentRestaurantId = newRid;
+    
+        productGrid.innerHTML = '';
+        fetchJSON(
+          `/order/menu-products/?restaurant_id=${encodeURIComponent(newRid)}`,
+          products => {
+            products.forEach(p => {
+              const col = document.createElement('div');
+              col.className = 'col-6 col-md-4';
+              col.innerHTML = `
+                <div class="card h-100">
+                  <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">${p.name}</h5>
+                    <p class="card-text mt-auto"><strong>${p.price.toFixed(2)} Kč</strong></p>
+                    <button class="btn btn-primary mt-2 add-btn"
+                            data-id="${p.id}"
+                            data-name="${p.name}"
+                            data-price="${p.price}">
+                      Přidat
+                    </button>
+                  </div>
+                </div>`;
+              productGrid.append(col);
+            });
+          }
+        );
+      });
+    
+      productGrid.addEventListener('click', e => {
+        if (!e.target.classList.contains('add-btn')) return;
+        const { id, name, price } = e.target.dataset;
+        if (!cart[id]) cart[id] = { name, price:+price, qty:0 };
+        cart[id].qty++;
+        renderCart();
+      });
+    
+      cartBody.addEventListener('click', e => {
+        const id = e.target.dataset.id;
+        if (!id) return;
+        if (e.target.classList.contains('inc')) cart[id].qty++;
+        if (e.target.classList.contains('dec')) cart[id].qty = Math.max(1, cart[id].qty-1);
+        if (e.target.classList.contains('del')) delete cart[id];
+        renderCart();
+      });
+    
+      checkoutBtn.addEventListener('click', () => {
+        if (!Object.keys(cart).length) {
+          return alert('Košík je prázdný!');
+        }
+        fetch("{% url 'order_placement' %}", {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+          },
+          body: JSON.stringify({
+            customer_id: +customerId,
+            restaurant_id: +currentRestaurantId,
+            lines: Object.entries(cart).map(([id,item]) => ({
+              menu_product_id: +id,
+              quantity:        item.qty
+            }))
+          })
+        })
+        .then(r => r.json())
+        .then(d => {
+          if (d.success) {
+            alert('Objednávka přijata! Číslo: ' + d.order_id);
+            cart = {}; renderCart();
+          } else {
+            alert('Chyba: ' + (d.error||'Neznámá'));
+          }
+        });
+      });
+    
+    });
+</script>
+    
+{% endblock %}

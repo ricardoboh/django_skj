@@ -1,0 +1,408 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Objednávkový formulář{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Objednávkový formulář</h2>
+
+  <div class="mb-3 position-relative">
+    <label for="customerPhone" class="form-label">Telefon zákazníka</label>
+    <input type="text" class="form-control" id="customerPhone" placeholder="Enter phone number">
+    <div id="customerDropdown" class="dropdown-menu w-100"></div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-6 mb-3">
+      <label for="customerName" class="form-label">Jméno</label>
+      <input type="text" class="form-control" id="customerName" disabled>
+    </div>
+    <div class="col-md-6 mb-3">
+      <label for="customerSurname" class="form-label">Příjmení</label>
+      <input type="text" class="form-control" id="customerSurname" disabled>
+    </div>
+  </div>
+  <div class="mb-3">
+    <label for="customerEmail" class="form-label">Email</label>
+    <input type="email" class="form-control" id="customerEmail" disabled>
+  </div>
+  <div class="mb-3">
+    <label for="customerAddress" class="form-label">Adresa zákazníka</label>
+    <textarea class="form-control" id="customerAddress" rows="2" disabled></textarea>
+  </div>
+  <button class="btn btn-secondary" id="editCustomerBtn">Upravit</button>
+  <button class="btn btn-primary" id="saveCustomerBtn" disabled>Uložit</button>
+  <hr>
+
+  <div class="mb-3">
+    <label for="orderAddress" class="form-label">Doručovací adresa (pokud nutná)</label>
+    <textarea class="form-control" id="orderAddress" rows="2" placeholder="Enter delivery address"></textarea>
+    <button class="btn btn-primary mt-2" id="saveOrderAddressBtn" disabled>Uložit adresu</button>
+  </div>
+  <hr>
+
+  <div class="mb-3">
+    <label for="deliveryGuySelect" class="form-label">Vybrat rozvozce</label>
+    <select class="form-select" id="deliveryGuySelect">
+      <option selected disabled>Výběr rozvozců</option>
+    </select>
+  </div>
+
+  <div class="mb-3 position-relative">
+    <label for="restaurantSearch" class="form-label">Výběr restaurace</label>
+    <input type="text" class="form-control" id="restaurantSearch" placeholder="Search restaurant">
+    <div id="restaurantDropdown" class="dropdown-menu w-100"></div>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Produkty</label>
+    <div id="productList" class="list-group">
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Košík</label>
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Produkt</th>
+          <th>Množství</th>
+          <th>Cena</th>
+          <th>Volby</th>
+        </tr>
+      </thead>
+      <tbody id="cartTableBody">
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mb-3">
+    <h5>Výsledná cena: <span id="totalPrice">0.00</span> Kč</h5>
+  </div>
+  <div class="mb-3">
+    <label for="paymentMethod" class="form-label">Platební metoda</label>
+    <select class="form-select" id="paymentMethod">
+      <option value="cash">Hotově</option>
+      <option value="card">Kartou</option>
+    </select>
+  </div>
+  <div class="d-flex gap-2">
+    <button class="btn btn-success" id="finishOrderBtn">Dokončit objednávku</button>
+    <button class="btn btn-danger" id="cancelOrderBtn">Zrušit objednávku</button>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM ready');
+    const phoneInput = document.getElementById('customerPhone');
+    const customerDropdown = document.getElementById('customerDropdown');
+    const nameInput = document.getElementById('customerName');
+    const surnameInput = document.getElementById('customerSurname');
+    const emailInput = document.getElementById('customerEmail');
+    const addressInput = document.getElementById('customerAddress');
+    const editBtn = document.getElementById('editCustomerBtn');
+    const saveBtn = document.getElementById('saveCustomerBtn');
+    const deliveryGuySelect = document.getElementById('deliveryGuySelect');
+    const restInput = document.getElementById('restaurantSearch');
+    const restDropdown = document.getElementById('restaurantDropdown');
+    const productList = document.getElementById('productList');
+    const cartBody = document.getElementById('cartTableBody');
+    const totalPriceEl = document.getElementById('totalPrice');
+    const finishBtn = document.getElementById('finishOrderBtn');
+    const cancelBtn = document.getElementById('cancelOrderBtn');
+    const addressOverride = document.getElementById('orderAddress');
+    const paymentSelect = document.getElementById('paymentMethod');
+  
+    let selectedCustomerId = null;
+    let selectedRestaurantId = null;
+    let debounceTimer = null;
+    let cart = {};
+  
+    function debounce(fn, ms=300) {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(fn, ms);
+    }
+  
+    function fetchJSON(url, cb) {
+      fetch(url, { credentials: 'same-origin' })
+        .then(r => r.ok ? r.json() : Promise.reject(r))
+        .then(cb)
+        .catch(err => console.error('fetchJSON', url, err));
+    }
+  
+  
+    function clearChildren(el) {
+      el.innerHTML = '';
+    }
+    
+    phoneInput.addEventListener('input', e => {
+      const q = e.target.value.trim();
+      if (!q) {
+        customerDropdown.classList.remove('show');
+        return;
+      }
+
+  fetch(`/person/search-customer/?phone=${encodeURIComponent(q)}`)
+    .then(r => {
+      console.log('FETCH STATUS:', r.status);
+      return r.json();
+    })
+    .then(data => {
+      console.log('FETCH DATA:', data);
+      customerDropdown.innerHTML = '';
+
+      if (!data.length) {
+        return customerDropdown.classList.remove('show');
+      }
+
+      data.forEach(cust => {
+        const a = document.createElement('a');
+        a.href = '#';
+        a.className = 'dropdown-item';
+        a.textContent = `${cust.name} ${cust.surname} (${cust.phone})`;
+
+        a.dataset.id = cust.id;
+        a.dataset.name = cust.name;
+        a.dataset.surname = cust.surname;
+        a.dataset.phone = cust.phone;
+        a.dataset.email = cust.email;
+        a.dataset.address = cust.address;
+
+        customerDropdown.append(a);
+      });
+
+      customerDropdown.classList.add('show');
+    })
+    .catch(err => console.error('FETCH ERR:', err));
+});
+
+customerDropdown.addEventListener('click', e => {
+  e.preventDefault();
+  const a = e.target.closest('.dropdown-item');
+  if (!a) return;
+
+  selectedCustomerId = +a.dataset.id;
+  phoneInput.value = a.dataset.phone;
+  nameInput.value = a.dataset.name;
+  surnameInput.value = a.dataset.surname;
+  emailInput.value = a.dataset.email;
+  addressInput.value = a.dataset.address;
+
+  editBtn.disabled = false;
+  saveBtn.disabled = true;
+  customerDropdown.classList.remove('show');
+});
+
+editBtn.addEventListener('click', () => {
+  [ nameInput, surnameInput, emailInput, addressInput ]
+    .forEach(i => i.disabled = false);
+  saveBtn.disabled = false;
+});
+
+saveBtn.addEventListener('click', () => {
+  fetch(`/person/update_customer/`, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': '{{ csrf_token }}'
+    },
+    body: JSON.stringify({
+      id:      selectedCustomerId,
+      name:    nameInput.value,
+      surname: surnameInput.value,
+      email:   emailInput.value,
+      address: addressInput.value
+    })
+  })
+  .then(r => r.json())
+  .then(resp => {
+    if (resp.success) {
+      alert('Customer saved!');
+      [ nameInput, surnameInput, emailInput, addressInput ]
+        .forEach(i => i.disabled = true);
+      saveBtn.disabled = true;
+    } else {
+      alert('Error saving customer: ' + (resp.error || 'Unknown'));
+    }
+  })
+  .catch(err => {
+    console.error('SAVE ERR:', err);
+    alert('Failed to save customer.');
+  });
+});
+
+  
+  document.addEventListener('click', e => {
+    if (!phoneInput.contains(e.target) &&
+        !customerDropdown.contains(e.target)) {
+      customerDropdown.classList.remove('show');
+    }
+  });
+
+  fetchJSON('/order/delivery-guys/', data => {
+    data.forEach(guy => {
+      const o = document.createElement('option');
+      o.value = guy.id;
+      o.textContent = `${guy.name} ${guy.surname} (${guy.phone})`;
+      deliveryGuySelect.append(o);
+    });
+  });
+  
+  restInput.addEventListener('input', () => {
+    const q = restInput.value.trim();
+    if (!q) return restDropdown.classList.remove('show');
+    debounce(() => {
+      fetchJSON(`/order/search-restaurants/?q=${encodeURIComponent(q)}`, list => {
+        clearChildren(restDropdown);
+        if (!list.length) return restDropdown.classList.remove('show');
+        list.forEach(r => {
+          const a = document.createElement('a');
+          a.href = '#';
+          a.className = 'dropdown-item';
+          a.textContent = `${r.name} — ${r.address}`;
+          a.dataset.id = r.id;
+          a.dataset.name = r.name;
+          restDropdown.append(a);
+        });
+        restDropdown.classList.add('show');
+      });
+    });
+  });
+  
+  restDropdown.addEventListener('click', e => {
+    e.preventDefault();
+    const a = e.target.closest('.dropdown-item');
+    if (!a) return;
+    selectedRestaurantId = +a.dataset.id;
+    restInput.value = a.dataset.name;
+    restDropdown.classList.remove('show');
+
+    fetchJSON(`/order/menu-products/?restaurant_id=${a.dataset.id}`, items => {
+      clearChildren(productList);
+      items.forEach(it => {
+        const div = document.createElement('div');
+        div.className = 'list-group-item d-flex justify-content-between';
+        div.innerHTML = `
+          <span>${it.name} — ${it.price} Kč</span>
+          <button class="btn btn-sm btn-success add-to-cart"
+                  data-id="${it.id}"
+                  data-name="${it.name}"
+                  data-price="${it.price}">+</button>
+        `;
+        productList.append(div);
+      });
+    });
+  });
+  
+  document.addEventListener('click', e => {
+    if (!restInput.contains(e.target) &&
+        !restDropdown.contains(e.target)) {
+      restDropdown.classList.remove('show');
+    }
+  });
+
+  productList.addEventListener('click', e => {
+    if (!e.target.classList.contains('add-to-cart')) return;
+    const { id, name, price } = e.target.dataset;
+    if (!cart[id]) cart[id] = { name, price: +price, qty: 0 };
+    cart[id].qty++;
+    renderCart();
+  });
+  
+  function renderCart() {
+    clearChildren(cartBody);
+    let total = 0;
+    Object.entries(cart).forEach(([id, item]) => {
+      const line = item.price * item.qty;
+      total += line;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${item.name}</td>
+        <td>${item.qty}</td>
+        <td>${line.toFixed(2)}</td>
+        <td>
+          <button class="btn btn-sm btn-outline-primary cart-increase" data-id="${id}">+</button>
+          <button class="btn btn-sm btn-outline-secondary cart-decrease" data-id="${id}">–</button>
+          <button class="btn btn-sm btn-outline-danger cart-remove"   data-id="${id}">×</button>
+        </td>
+      `;
+      cartBody.append(tr);
+    });
+    totalPriceEl.textContent = total.toFixed(2);
+  }
+  
+  cartBody.addEventListener('click', e => {
+    const id = e.target.dataset.id;
+    if (!id) return;
+    if (e.target.classList.contains('cart-increase')) cart[id].qty++;
+    if (e.target.classList.contains('cart-decrease')) cart[id].qty = Math.max(1, cart[id].qty-1);
+    if (e.target.classList.contains('cart-remove')) delete cart[id];
+    renderCart();
+  });
+
+  function collectOrderData() {
+    return {
+      customer_id: selectedCustomerId,
+      delivery_guy_id: deliveryGuySelect.value || null,
+      restaurant_id: selectedRestaurantId,
+      delivery_address: addressOverride.value.trim() || null,
+      payment_method: paymentSelect.value,
+      items: Object.entries(cart).map(([id,item]) => ({
+        menu_product_id: +id,
+        quantity: item.qty
+      }))
+    };
+  }
+  
+  finishBtn.addEventListener('click', () => {
+    if (!selectedCustomerId)   return alert('Please select a customer.');
+    if (!selectedRestaurantId) return alert('Please select a restaurant.');
+    fetch("{% url 'finish_order' %}", {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken':  '{{ csrf_token }}'
+      },
+      body: JSON.stringify(collectOrderData())
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success && d.redirect_url) {
+        window.location.href = d.redirect_url;
+      } else {
+        alert('Error: ' + (d.error||'Unknown'));
+      }
+    });
+  });
+
+  cancelBtn.addEventListener('click', () => {
+    fetch("{% url 'cancel_order' %}", {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken':  '{{ csrf_token }}'
+      },
+      body: JSON.stringify({ order_id: null })
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success && d.redirect_url) {
+        window.location.href = d.redirect_url;
+      } else {
+        alert('Cancel failed.');
+      }
+    });
+  });
+});
+  
+</script>
+{% endblock %}
+

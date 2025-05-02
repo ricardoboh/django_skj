@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% block title %}Registrace{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column align-items-center justify-content-center min-vh-100 text-center">
+  <p class="fs-4 mb-4">Vytvořit účet</p>
+
+  <form method="post" class="w-100" style="max-width: 500px;">
+    {% csrf_token %}
+
+    {% if errors.non_field %}
+      <div class="text-danger mb-3">{{ errors.non_field }}</div>
+    {% endif %}
+
+    <h5 class="mb-3 text-start">Účet</h5>
+    <div class="mb-3 text-start">
+      <label for="id_username" class="form-label fw-semibold">Uživatelské jméno</label>
+      <input
+        type="text"
+        id="id_username"
+        name="username"
+        class="form-control"
+        value="{{ values.username }}"
+        required
+      >
+      {% if errors.username %}
+        <div class="text-danger small mt-1">{{ errors.username }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3 text-start">
+      <label for="id_password1" class="form-label fw-semibold">Heslo</label>
+      <input
+        type="password"
+        id="id_password1"
+        name="password1"
+        class="form-control"
+        required
+      >
+      {% if errors.password1 %}
+        <div class="text-danger small mt-1">{{ errors.password1 }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3 text-start">
+      <label for="id_password2" class="form-label fw-semibold">Potvrzení hesla</label>
+      <input
+        type="password"
+        id="id_password2"
+        name="password2"
+        class="form-control"
+        required
+      >
+      {% if errors.password2 %}
+        <div class="text-danger small mt-1">{{ errors.password2 }}</div>
+      {% endif %}
+    </div>
+
+    <hr class="my-4">
+    <h5 class="mb-3 text-start">Profil</h5>
+    <div class="mb-3 text-start">
+      <label for="id_name" class="form-label fw-semibold">Jméno</label>
+      <input
+        type="text"
+        id="id_name"
+        name="name"
+        class="form-control"
+        value="{{ values.name }}"
+        required
+      >
+      {% if errors.name %}
+        <div class="text-danger small mt-1">{{ errors.name }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3 text-start">
+      <label for="id_surname" class="form-label fw-semibold">Příjmení</label>
+      <input
+        type="text"
+        id="id_surname"
+        name="surname"
+        class="form-control"
+        value="{{ values.surname }}"
+        required
+      >
+      {% if errors.surname %}
+        <div class="text-danger small mt-1">{{ errors.surname }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3 text-start">
+      <label for="id_birthdays" class="form-label fw-semibold">Datum narození</label>
+      <input
+        type="date"
+        id="id_birthdays"
+        name="birthdays"
+        class="form-control"
+        value="{{ values.birthdays }}"
+      >
+    </div>
+
+    <div class="mb-3 text-start">
+      <label for="id_email" class="form-label fw-semibold">Email</label>
+      <input
+        type="email"
+        id="id_email"
+        name="email"
+        class="form-control"
+        value="{{ values.email }}"
+        required
+      >
+      {% if errors.email %}
+        <div class="text-danger small mt-1">{{ errors.email }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3 text-start">
+      <label for="id_phone" class="form-label fw-semibold">Telefon</label>
+      <input
+        type="tel"
+        id="id_phone"
+        name="phone"
+        class="form-control"
+        value="{{ values.phone }}"
+        required
+      >
+      {% if errors.phone %}
+        <div class="text-danger small mt-1">{{ errors.phone }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3 text-start">
+      <label for="id_address" class="form-label fw-semibold">Adresa</label>
+      <textarea
+        id="id_address"
+        name="address"
+        class="form-control"
+        rows="3"
+      >{{ values.address }}</textarea>
+      {% if errors.address %}
+        <div class="text-danger small mt-1">{{ errors.address }}</div>
+      {% endif %}
+    </div>
+
+    <div class="form-check text-start mb-4">
+      <input
+        type="checkbox"
+        id="id_newsletters"
+        name="newsletters"
+        class="form-check-input"
+        {% if values.newsletters %}checked{% endif %}
+      >
+      <label for="id_newsletters" class="form-check-label">
+        Chci odebírat newsletter
+      </label>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100">Registrovat</button>
+  </form>
+</div>
+{% endblock %}
+

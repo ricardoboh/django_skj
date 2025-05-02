@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Můj profil{% endblock %}
+
+{% block content %}
+<div class="card mx-auto" style="max-width:600px;">
+  <div class="card-body">
+    <h3 class="card-title">Můj profil</h3>
+
+    <dl class="row">
+      <dt class="col-sm-4">Uživatelské jméno</dt>
+      <dd class="col-sm-8">{{ request.user.username }}</dd>
+
+      <dt class="col-sm-4">Email</dt>
+      <dd class="col-sm-8">{{ request.user.email }}</dd>
+
+      <dt class="col-sm-4">Jméno</dt>
+      <dd class="col-sm-8">{{ customer.name }}</dd>
+
+      <dt class="col-sm-4">Příjmení</dt>
+      <dd class="col-sm-8">{{ customer.surname }}</dd>
+
+      <dt class="col-sm-4">Datum narození</dt>
+      <dd class="col-sm-8">
+        {{ customer.birthdays|date:"Y-m-d" }}
+      </dd>
+
+      <dt class="col-sm-4">Telefon</dt>
+      <dd class="col-sm-8">{{ customer.phone }}</dd>
+
+      <dt class="col-sm-4">Adresa</dt>
+      <dd class="col-sm-8">{{ customer.address }}</dd>
+
+      <dt class="col-sm-4">Newsletter</dt>
+      <dd class="col-sm-8">
+        {% if customer.newsletters %}Ano{% else %}Ne{% endif %}
+      </dd>
+    </dl>
+
+    <a href="{% url 'edit_profile' %}" class="btn btn-secondary mt-3">
+      Upravit profil
+    </a>
+  </div>
+</div>
+{% endblock %}

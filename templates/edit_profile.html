@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% block title %}Upravit profil{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column align-items-center justify-content-center my-5">
+  <h3 class="mb-4">Upravit profil</h3>
+
+  <form method="post" class="w-100" style="max-width: 600px;">
+    {% csrf_token %}
+    <div class="mb-3 text-start">
+      <label for="id_username" class="form-label fw-semibold">Uživatelské jméno</label>
+      <input
+        type="text"
+        id="id_username"
+        name="username"
+        class="form-control"
+        value="{{ values.username }}"
+        required
+      >
+      {% if errors.username %}
+        <div class="text-danger small mt-1">{{ errors.username }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3 text-start">
+      <label for="id_email" class="form-label fw-semibold">Email</label>
+      <input
+        type="email"
+        id="id_email"
+        name="email"
+        class="form-control"
+        value="{{ values.email }}"
+        required
+      >
+      {% if errors.email %}
+        <div class="text-danger small mt-1">{{ errors.email }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3 text-start">
+      <label for="id_name" class="form-label fw-semibold">Jméno</label>
+      <input
+        type="text"
+        id="id_name"
+        name="name"
+        class="form-control"
+        value="{{ values.name }}"
+        required
+      >
+      {% if errors.name %}
+        <div class="text-danger small mt-1">{{ errors.name }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3 text-start">
+      <label for="id_surname" class="form-label fw-semibold">Příjmení</label>
+      <input
+        type="text"
+        id="id_surname"
+        name="surname"
+        class="form-control"
+        value="{{ values.surname }}"
+        required
+      >
+      {% if errors.surname %}
+        <div class="text-danger small mt-1">{{ errors.surname }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3 text-start">
+      <label for="id_birthdays" class="form-label fw-semibold">Datum narození</label>
+      <input
+        type="date"
+        id="id_birthdays"
+        name="birthdays"
+        class="form-control"
+        value="{{ values.birthdays }}"
+      >
+    </div>
+
+    <div class="mb-3 text-start">
+      <label for="id_phone" class="form-label fw-semibold">Telefon</label>
+      <input
+        type="phone"
+        id="id_phone"
+        name="phone"
+        class="form-control"
+        value="{{ values.phone }}"
+        required
+      >
+      {% if errors.phone %}
+        <div class="text-danger small mt-1">{{ errors.phone }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3 text-start">
+      <label for="id_address" class="form-label fw-semibold">Adresa</label>
+      <textarea
+        id="id_address"
+        name="address"
+        class="form-control"
+        rows="3"
+      >{{ values.address }}</textarea>
+      {% if errors.address %}
+        <div class="text-danger small mt-1">{{ errors.address }}</div>
+      {% endif %}
+    </div>
+
+    <div class="form-check text-start mb-4">
+      <input
+        type="checkbox"
+        id="id_newsletters"
+        name="newsletters"
+        class="form-check-input"
+        {% if values.newsletters %}checked{% endif %}
+      >
+      <label for="id_newsletters" class="form-check-label">
+        Chci odebírat newsletter
+      </label>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Uložit změny</button>
+  </form>
+</div>
+{% endblock %}

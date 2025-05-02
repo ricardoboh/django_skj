@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Přihlášení{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column align-items-center justify-content-center min-vh-100 text-center">
+  <p class="fs-4 mb-4">Přihlásit se</p>
+  <form method="post" class="w-100" style="max-width: 400px;">
+    {% csrf_token %}
+    {% if error %}
+      <div class="text-danger small mb-3">{{ error }}</div>
+    {% endif %}
+    <div class="mb-3 text-start">
+      <label for="username" class="form-label fw-semibold">Jméno</label>
+      <input type="text" id="username" name="username" class="form-control" required>
+    </div>
+    <div class="mb-3 text-start">
+      <label for="password" class="form-label fw-semibold">Heslo</label>
+      <input type="password" id="password" name="password" class="form-control" required>
+    </div>
+    <button type="submit" class="btn btn-light border fw-semibold px-4 mt-3">
+      Přihlásit se
+    </button>
+  </form>
+</div>
+{% endblock %}
